@@ -1,3 +1,5 @@
 import streamlit as st
 
-st.write('About')
+st.title('About')
+
+st.subheader('Authors')
