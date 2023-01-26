@@ -1,11 +1,114 @@
-import streamlit as st
-import pandas as pd
+"""Main introduction.
+
+Show the network plot.
+"""
+
+
 import numpy as np
+import pandas as pd
+import pydeck as pdk
+import streamlit as st
 
-st.title('Redes de deslocamento para acesso ao parto hospitalar no Brasil')
 
-st.write("No Brasil, 98% dos partos ocorrem em ambiente hospitalar, e 77% no Sistema Único de Saúde (SUS). O acesso oportuno aos serviços obstétricos de internação para o parto é fundamental para garantir a segurança do cuidado materno e neonatal. Entretanto, há “vazios assistenciais” na oferta de serviços hospitalares pelo SUS que fazem com que grande parte das parturientes precise se deslocar de um município a outro para ser assistida.")
-st.write("O retardo na atenção obstétrica no momento do parto está associado à desfechos maternos adversos, e o deslocamento de grandes distâncias tem sido associado a níveis elevados de mortalidade infantil e neonatal, além de maior risco de morbimortalidade materna. Assim, a análise da distância percorrida pelas parturientes de sua residência até o hospital é um indicador útil e sensível para avaliar a dificuldade em acessar cuidados maternos e neonatais no SUS.")
-st.write("A análise da acessibilidade geográfica é um componente importante da avaliação de serviços de saúde e reflete aspectos da distribuição espacial da oferta de serviços que dificultam ou promovem sua utilização. A metodologia de análise de redes sociais (ARS) tem sido utilizada nesse contexto, incluindo a internação para o parto, e também como ferramenta para gestão em saúde.")
-st.write("Este projeto tem o objetivo de analisar a acessibilidade geográfica ao parto hospitalar realizado no SUS nos últimos 10 anos, em todo Brasil, aplicando a ARS como uma nova ferramenta para a gestão de serviços de saúde. Serão utilizados dados do Departamento de Informática do SUS (DATASUS) para a construção das redes de deslocamento das gestantes em busca de internação para o parto, levando-se em conta as distâncias percorridas, mapeando fluxos preferenciais e identificando lacunas geográficas de atendimento e polos de atração de maior demanda, como medida de inequidade no acesso aos serviços. O projeto avança no processo de avaliação do sistema de saúde ao desenvolver novos indicadores de acesso à serviços obstétricos, baseados em uma metodologia inovadora, e com abrangência nacional e aplicabilidade a outras áreas de saúde pública.")
-st.write("Espera-se, com este estudo, gerar evidências que permitam um melhor entendimento da organização e das fragilidades do SUS na assistência à saúde da mulher no ciclo gravídico-puerperal, contribuindo para o planejamento da atenção obstétrica e para o fortalecimento de políticas públicas voltadas para melhoria do acesso aos serviços de saúde.")
+st.title("Trajectory by pregnant women for delivery care under Brazil's Unified Health System (SUS)")
+
+
+path_procs = 'data/procs.csv.gzip'
+df_procs = pd.read_csv(path_procs)
+
+
+years = st.multiselect(
+  'Ano',
+  sorted(df_procs['ano'].unique()),
+  [2018, 2019],
+)
+
+procs = st.multiselect(
+  'Procedimentos',
+  sorted(df_procs['procedimento'].unique()),
+  ['C_', 'N_'],
+)
+
+critic = st.multiselect(
+  'Criticidade',
+  sorted(df_procs['criticidade'].unique()),
+  [1, 2],
+)
+
+capitais = st.multiselect(
+  'Capitais',
+  sorted(df_procs['capitais'].unique()),
+  ['0_1'],
+)
+
+socioecon = st.multiselect(
+  'Socioeconômico',
+  sorted(df_procs['socioecon'].unique()),
+  ['1_5', '2_5', '3_5', '1_4', '2_4', '3_4'],
+)
+
+@st.cache
+def load_network(years, procs):
+  df_procs = pd.read_csv(path_procs)
+  df_procs = df_procs[(
+      df_procs['ano'].isin(years)
+    ) & (
+      df_procs['procedimento'].isin(procs)
+    ) & (
+      df_procs['criticidade'].isin(critic)
+    ) & (
+      df_procs['capitais'].isin(capitais)
+    ) & (
+      df_procs['socioecon'].isin(socioecon)
+  )]
+  df_procs = df_procs.drop(['ano', 'procedimento'], axis=1)
+  df_procs = df_procs.groupby(
+    by=list(df_procs.columns[:-1]), as_index=False).sum()
+  df_procs['size'] = np.interp(
+    df_procs['count'],
+    [0, df_procs['count'].max()],
+    [0, 1])
+  df_procs['size'] = 2 ** df_procs['size']
+  df_procs['size'] = np.interp(
+    df_procs['size'],
+    [1, df_procs['size'].max()],
+    [.02, 20])
+  return df_procs
+
+
+# Define a layer to display on a map
+layer = pdk.Layer(
+    'ArcLayer',
+    data=load_network(years, procs),
+    get_width='size',
+    get_source_position=['origem_longitude', 'origem_latitude'],
+    get_target_position=['destino_longitude', 'destino_latitude'],
+    get_source_color=[4, 167, 89, 255],
+    get_target_color=[255, 204, 40, 255],
+    pickable=True,
+    auto_highlight=True,
+)
+
+
+# Set the viewport location
+view_state = pdk.ViewState(latitude=-15, longitude=-55, zoom=3)
+
+
+tooltip_text = """{count} Parturiente(s)
+  {origem_nomeclatura} >> {destino_nomeclatura}
+  {km (osm)} km (osm) & {min (osm)} min (osm)
+  Criticidade: {criticidade}
+  Socioeconômico: {socioecon}
+  Capitais: {capitais}
+"""
+
+
+# Render
+r = pdk.Deck(
+  layers=[layer],
+  initial_view_state=view_state,
+  tooltip={'text': tooltip_text},)
+r.picking_radius = 10
+st.pydeck_chart(r)
+
+st.write('Network plot. municipios são nós, arestas representam deslocamente entre municipios, peso é distancia * tempo * procedimenotos, infos em cada aresta informa esses valores individualmente')
