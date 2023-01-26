@@ -13,8 +13,8 @@ import streamlit as st
 st.title("The trajectory by pregnant women for delivery care under Brazil's Unified Health System (SUS)")
 
 
-path_procs = 'data/procs.csv.gzip'
-df_procs = pd.read_csv(path_procs)
+# path_procs = 'data/procs.csv'
+path_procs ='https://raw.githubusercontent.com/lucaslopes/parturient-trajectory/data/data/procs.csv'
 
 
 col_year, col_critic, col_capital = st.columns([2, 3, 3])
@@ -31,7 +31,7 @@ with col_year:
 with col_proc:
   procs = st.multiselect(
     'Procedimentos',
-    sorted(df_procs['procedimento'].unique()),
+    ['C_', 'C_L', 'C_R', 'N_', 'N_C', 'N_R'],
     ['C_', 'N_'])
 
 

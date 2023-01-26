@@ -132,4 +132,4 @@ dmypy.json
 .streamlit/secrets.toml
 
 # Local data
-# /data/*
+/data/*
