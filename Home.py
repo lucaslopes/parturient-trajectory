@@ -13,8 +13,8 @@ import streamlit as st
 st.title("The trajectory by pregnant women for delivery care under Brazil's Unified Health System (SUS)")
 
 
-# path_procs = 'data/procs.csv'
-path_procs ='https://raw.githubusercontent.com/lucaslopes/parturient-trajectory/data/data/procs.csv'
+path_procs = 'data/procs.csv'
+# path_procs ='https://raw.githubusercontent.com/lucaslopes/parturient-trajectory/data/data/procs.csv'
 
 
 col_year, col_critic, col_capital = st.columns([2, 3, 3])
