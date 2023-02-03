@@ -1,0 +1,1 @@
+# Tendência dos casos que tiveram que se deslocar do município de residência, dentro do estado do RJ, considerando a porcentagem dos casos de deslocamento dividido por todos os partos ano a ano de 2010 a 2019 com 3 linhas: total, normal e cesárea
