@@ -3,9 +3,12 @@
 Tendência dos casos que tiveram que se deslocar do município de residência, dentro do estado do RJ, considerando a porcentagem dos casos de deslocamento dividido por todos os partos ano a ano de 2010 a 2019 com 3 linhas: total, normal e cesárea.
 """
 
-import streamlit as st
+
+import numpy as np
 import pandas as pd
+import streamlit as st
 import plotly.express as px
+import statsmodels.api as sm
 
 
 def group_df(df):
@@ -13,11 +16,6 @@ def group_df(df):
     by=list(df.columns)[:-1],
     as_index=False,
   ).sum()
-
-def sort_df(df: pd.DataFrame):
-  return df.sort_values(
-    by=list(df.columns)[:-1],
-  ).reset_index(drop=True)
 
 
 path_procs = 'data/procs.csv'
@@ -34,7 +32,7 @@ cols = [
   'count',
 ]
 
-df = df[filtro_parto & flt_orig][cols]# & flt_dest][cols]
+df = df[filtro_parto & flt_orig & flt_dest][cols]
 df['criticidade'] = df['criticidade'] > 0
 
 df_ambos = df.copy()
@@ -58,10 +56,12 @@ df = pd.merge(
   suffixes=['_total', '_critic'],
 )
 
-df = sort_df(df)
+df = df.sort_values(
+  by=list(df.columns)[:-1],
+).reset_index(drop=True)
+
 df['percent'] = df['count_critic'] /  df['count_total']
 
-st.dataframe(df)
 
 fig = px.scatter(
     data_frame=df,
@@ -76,6 +76,28 @@ fig = px.scatter(
 results = px.get_trendline_results(fig)
 info = results.px_fit_results.iloc[0].summary()
 
+
+params = dict()
+for proc in df['procedimento'].unique():
+  df_proc = df[df['procedimento'] == proc]
+  Y = df_proc['percent']
+  X = df_proc['ano']
+  X = sm.add_constant(X)
+  model = sm.OLS(Y,X)
+  results = model.fit()
+  params[proc] = (results.params[0], results.params[1])
+
+
+df['slope'] = df['procedimento'].apply(
+  lambda proc: params[proc][1])
+df['intercept'] = df['procedimento'].apply(
+  lambda proc: params[proc][0])
+df['trend'] = df['slope'] * df['ano'] + df['intercept']
+
+
 st.plotly_chart(fig)
+st.dataframe(df)
 st.write(info)
+
+df.to_csv('data/trend_rj.csv', index=False)
 
