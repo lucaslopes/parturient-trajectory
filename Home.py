@@ -122,7 +122,7 @@ view_state = pdk.ViewState(latitude=-15, longitude=-55, zoom=3)
 
 
 tooltip_text = """{count} Parturiente(s)
-  {origem_nomeclatura} >> {destino_nomeclatura}
+  {origem_nome} >> {destino_nome}
   {km (osm)} km (osm) & {min (osm)} min (osm)
   Criticidade: {criticidade}
   Socioeconômico: {socioecon}
