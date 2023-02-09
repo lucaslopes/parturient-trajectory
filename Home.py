@@ -14,11 +14,17 @@ st.title("The trajectory by pregnant women for delivery care under Brazil's Unif
 
 
 path_procs = 'data/procs.csv'
-# path_procs ='https://raw.githubusercontent.com/lucaslopes/parturient-trajectory/data/data/procs.csv'
 
 
 col_year, col_critic, col_capital = st.columns([2, 3, 3])
 col_proc, col_socioecon = st.columns([2, 1])
+
+
+br_states = ['BR', 'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO']
+states = st.selectbox(
+  'Estado',
+  br_states,
+  index=0)
 
 
 with col_year:
@@ -85,6 +91,10 @@ def load_network(years, procs, critic, capitais, socioecon):
       df_procs['capitais'].isin(caps)
     ) & (
       df_procs['socioecon'].isin(secons)
+    ) & (
+      df_procs['origem_nomeclatura'].str.contains(states)
+    ) & (
+      df_procs['destino_nomeclatura'].str.contains(states)
   )]
   
   df_procs = df_procs.drop(['ano', 'procedimento'], axis=1)
